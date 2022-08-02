@@ -175,7 +175,7 @@ include_directories(
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
 
-catkin_install_python(PROGRAMS scripts/emergency_surface_action.py scripts/leader_follower_action.py scripts/wp_depth_action_planner.py scripts/panoramic_inspection_action.py scripts/mission_complete_node.py scripts/vbs_depth_action.py scripts/toggle_controller.py scripts/rpm_repub.py
+catkin_install_python(PROGRAMS scripts/emergency_surface_action.py scripts/leader_follower_action.py scripts/wp_depth_action_planner.py scripts/panoramic_inspection_action.py scripts/mission_complete_node.py scripts/vbs_depth_action.py scripts/toggle_controller.py scripts/rpm_repub.py scripts/GoToStart.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
