@@ -2,15 +2,13 @@
 import rospy
 import numpy as np
 #for publisher
-from smarc_msgs.msg import GotoWaypoint, GotoWaypointResult
+from smarc_msgs.msg import GotoWaypoint, GotoWaypointActionResult
 
 # for listeners
 from nav_msgs.msg import Odometry
-from std_msgs.msg import Float64, Header, Bool, Empty
+from std_msgs.msg import Float64, Bool
 import tf2_geometry_msgs
-
 import tf2_ros
-from vision_msgs.msg import ObjectHypothesisWithPose, Detection2DArray, Detection2D
 
 
 
@@ -28,13 +26,13 @@ class GoToStart(object):
         self.enable_pub = rospy.Publisher('/sam/algae_farm/enable', Bool, queue_size=1)
 
         # Subscriber
+        self.wp_reached = False
+        self.waypoint_result_sub = rospy.Subscriber('/{}/ctrl/goto_waypoint/result'.format(self.vehicle), GotoWaypointActionResult, self.result_cb, queue_size=2)
         self.rawr = None
         self.yaw_sub = rospy.Subscriber('/{}/dr/yaw'.format(self.vehicle), Float64, self.raw)
         self.current_pose = None
         self.odom_sub = rospy.Subscriber('/{}/dr/odom'.format(self.vehicle), Odometry,self.update_pose)
-        self.wp_result = False
-        self.waypoint_result_sub = rospy.Subscriber('/{}/ctrl/goto_waypoint/result'.format(self.vehicle), GotoWaypointResult, self.result)
-
+        
         self.tf_buffer = tf2_ros.Buffer()
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
 
@@ -51,9 +49,12 @@ class GoToStart(object):
         rospy.loginfo('Activated GoToStart node')
         rospy.spin()
 
-    def result(self,msg):
-        self.wp_result = msg.result.reached_waypoint
-        print('RESULT', self.wp_result)
+    def result_cb(self,msg):
+        if msg.status.text == "WP Reached":
+            self.wp_reached = True
+            rospy.loginfo('WP reached')
+        else:
+            rospy.loginfo('WP not yet reached')
 
     def wait_for_transform(self, from_frame, to_frame):
         #tf_buffer = tf2_ros.Buffer()
@@ -63,7 +64,7 @@ class GoToStart(object):
                 trans = self.tf_buffer.lookup_transform(to_frame, from_frame, rospy.Time())
                 #trans = tf_buffer.lookup_transform(to_frame, from_frame, rospy.Time())
             except (tf2_ros.LookupException, tf2_ros.ConnectivityException,tf2_ros.ExtrapolationException) as error:
-                print('Failed to transform. Error: {}'.format(error))
+                rospy.loginfo('Failed to transform. Error: {}'.format(error))
         return trans
 
     def raw(self,msg):
@@ -118,10 +119,10 @@ class GoToStart(object):
 
         # publish WP
         self.waypoint_pub.publish(msg) 
-        print('PUBLISHED STARTING WP')
+        rospy.loginfo('PUBLISHED STARTING WP')
         #print(msg)
 
-        if self.wp_result == True:
+        if self.wp_reached == True:
             # publish not enable
             self.enable.data = False
             self.enable_pub.publish(self.enable)
@@ -135,7 +136,7 @@ def main ():
     rospy.Rate(11.) # ROS Rate at 10Hz
     robot_name = 'sam'
     print('entering GoToStart...')
-    initial_nax = GoToStart(robot_name)
+    initial_nav = GoToStart(robot_name)
 
     while not rospy.is_shutdown():
         rospy.spin()
