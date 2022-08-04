@@ -62,7 +62,6 @@ class GoToStart(object):
         while trans is None:
             try:
                 trans = self.tf_buffer.lookup_transform(to_frame, from_frame, rospy.Time())
-                #trans = tf_buffer.lookup_transform(to_frame, from_frame, rospy.Time())
             except (tf2_ros.LookupException, tf2_ros.ConnectivityException,tf2_ros.ExtrapolationException) as error:
                 rospy.loginfo('Failed to transform. Error: {}'.format(error))
         return trans
@@ -91,8 +90,17 @@ class GoToStart(object):
             self.qz_auv = self.current_pose.pose.orientation.z
             self.qw_auv = self.current_pose.pose.orientation.w
             #auv_yaw = self.rawr*180/np.pi
-            self.x_goal = self.x_auv
-            self.y_goal = self.y_auv + 10
+            # print('x',self.x_auv)
+            # print('y',self.y_auv)
+            # self.x_goal = self.x_auv + 10
+            # self.y_goal = self.y_auv + 10
+        
+            if self.y_auv <= 6459260:
+                self.x_goal = 643800
+                self.y_goal = 6459251
+            else: 
+                self.x_goal = 643800
+                self.y_goal = 6459269
 
         # publish enable
         self.enable.data = True
@@ -123,10 +131,12 @@ class GoToStart(object):
         #print(msg)
 
         if self.wp_reached == True:
+            rospy.loginfo('WAYPOINT REACHED WITH TOLERANCE = 2')
             # publish not enable
+            print(msg)
             self.enable.data = False
             self.enable_pub.publish(self.enable)
-            print('disabled wp publishing')
+            rospy.loginfo('disabled wp publishing')
             rospy.signal_shutdown('sent starting WP')
 
 
